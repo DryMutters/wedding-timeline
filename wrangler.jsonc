@@ -14,9 +14,10 @@
   },
   "d1_databases": [{ "binding": "DB", "database_name": "wedding-timeline", "database_id": "e6c96aee-6d1d-459e-963f-471e58423eff" }],
   "vars": {
-    // From Cloudflare Zero Trust. Until both are set, the builder refuses every request.
+    // From the Cloudflare Access application "Wedding timeline builder". Neither is a secret.
+    // If either is blank or wrong, the builder refuses every request.
     "ACCOUNT_ID": "mary-anna",
-    "TEAM_DOMAIN": "",
-    "POLICY_AUD": ""
+    "TEAM_DOMAIN": "https://crimson-block-a3e1.cloudflareaccess.com",
+    "POLICY_AUD": "ed257a175a2beddd2350d13dd68ff3cc1cde996b2da762fa6f28fba1ba3ffbe3"
   }
 }
