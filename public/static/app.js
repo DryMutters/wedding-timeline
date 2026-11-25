@@ -30,7 +30,7 @@
   var GOLDEN_MIN = 60, SUNSET_PORTRAIT_LEAD = 30, KEY = 'ma-timeline-draft-v1';
 
   var state = defaults();
-  var view = { blocks: [], sunset: null, cov: null, changes: { byId: {}, lines: [] }, openId: null, dirty: true, shownN: 1 };
+  var view = { blocks: [], sunset: null, cov: null, changes: { byId: {}, lines: [] }, openId: null, dirty: true, shownN: 1, as: 'edit' };
 
   function load() {
     try { var s = JSON.parse(localStorage.getItem(KEY)); return s && s.a && s.items ? s : null; } catch (e) { return null; }
@@ -264,83 +264,209 @@
   }
 
   function renderPage() {
-    renderHero(); renderStatus(); renderFacts(); renderLegend(); renderRows(); renderApprove(); renderRequests();
+    renderHero(); renderStatus(); renderFacts(); renderLegend();
+    if (HAS_BUILDER && view.as !== 'couple') renderRowsEdit(); else renderRows();
+    renderApprove(); renderRequests();
     layoutOverlays();
   }
 
   /* ---------- Builder (Mary's side) ---------- */
+  // Low-input start: three fields and two taps make a day; everything after that is done on the timeline itself.
   var FIELDS = { // input id -> [bucket, key, kind]
-    'q-couple': ['a', 'couple', 'text'], 'q-date': ['a', 'date', 'text'], 'q-planner': ['a', 'planner', 'text'],
-    'q-cer-venue': ['a', 'cerVenue', 'text'], 'q-place': ['a', 'place', 'text'],
-    'q-rec-same': ['a', 'recSame', 'check'], 'q-rec-venue': ['a', 'recVenue', 'text'],
-    'q-bride-same': ['a', 'brideSame', 'check'], 'q-bride-prep': ['a', 'bridePrep', 'text'],
-    'q-groom-same': ['a', 'groomSame', 'check'], 'q-groom-prep': ['a', 'groomPrep', 'text'],
-    'q-drive-cer': ['a', 'driveCer', 'num'], 'q-drive-rec': ['a', 'driveRec', 'num'],
-    'q-robes': ['a', 'robes', 'text'], 'q-dad': ['a', 'dad', 'text'], 'q-look': ['a', 'look', 'text'],
-    'q-cer-start': ['a', 'cerStart', 'text'], 'q-cer-len': ['a', 'cerLen', 'num'], 'q-rec-end': ['a', 'recEnd', 'text'],
-    'q-exit': ['a', 'exit', 'text'], 'q-notes': ['a', 'notes', 'text'],
-    'm-hours': ['m', 'hours', 'num'], 'm-cocktail': ['m', 'cocktail', 'num'], 'm-sunset': ['m', 'sunsetPortraits', 'text']
+    'q-couple': ['a', 'couple', 'text'], 'q-date': ['a', 'date', 'text'], 'q-cer-start': ['a', 'cerStart', 'text'],
+    'q-cer-len': ['a', 'cerLen', 'num'], 'q-rec-end': ['a', 'recEnd', 'text'], 'm-hours': ['m', 'hours', 'num'],
+    'q-planner': ['a', 'planner', 'text'], 'q-cer-venue': ['a', 'cerVenue', 'text'], 'q-place': ['a', 'place', 'text'],
+    'q-rec-venue': ['a', 'recVenue', 'text'], 'q-bride-prep': ['a', 'bridePrep', 'text'], 'q-groom-prep': ['a', 'groomPrep', 'text'],
+    'q-exit': ['a', 'exit', 'text'], 'q-notes': ['a', 'notes', 'text']
   };
-  var SHAPING = ['q-rec-same', 'q-bride-same', 'q-groom-same', 'q-drive-cer', 'q-drive-rec', 'q-robes', 'q-dad', 'q-look', 'm-cocktail'];
+  var undoStack = [];
+  function snap() { return JSON.stringify({ a: state.a, m: state.m, items: state.items }); }
+  function remember(s) { undoStack.push(s || snap()); if (undoStack.length > 40) undoStack.shift(); }
+  function undo() {
+    var s = undoStack.pop(); if (!s) return;
+    s = JSON.parse(s); state.a = s.a; state.m = s.m; state.items = s.items; fillInputs(); refresh();
+  }
+  function isMulti() { var a = state.a; return a.multi === undefined ? (!a.brideSame || !a.recSame) : a.multi; }
+  function itemById(id) { return state.items.filter(function (x) { return x.id === id; })[0]; }
 
   function fillInputs() {
     Object.keys(FIELDS).forEach(function (id) {
-      var f = FIELDS[id], el = $(id), v = state[f[0]][f[1]];
-      if (f[2] === 'check') el.checked = !!v; else el.value = v === null || v === undefined ? '' : v;
+      var f = FIELDS[id], v = state[f[0]][f[1]];
+      $(id).value = v === null || v === undefined ? '' : v;
     });
-    syncConditional();
-  }
-  function syncConditional() {
-    var a = state.a;
-    $('wrap-rec-venue').hidden = a.recSame; $('wrap-drive-rec').hidden = a.recSame;
-    $('wrap-bride-prep').hidden = a.brideSame; $('wrap-drive-cer').hidden = a.brideSame;
-    $('wrap-groom-prep').hidden = a.groomSame;
   }
 
-  function renderItems() {
-    var ul = $('items'); ul.textContent = '';
-    var blocks = {}; view.blocks.forEach(function (b) { blocks[b.id] = b; });
-    var row = function (it, idx) {
-      var b = blocks[it.id], handoff = it.type === 'handoff';
-      var mk = function (cls, key, ph) {
-        var inp = h('input', { class: cls, type: 'text', placeholder: ph, 'aria-label': ph, value: it[key] || '' });
-        inp.addEventListener('input', function () { it[key] = inp.value; if (key !== 'note') it.edited = true; derive(); renderPage(); renderChecks(); save(); });
-        return inp;
-      };
-      var act = function (label, title, fn, disabled) {
-        var bt = h('button', { class: 'it-btn', type: 'button', title: title, 'aria-label': title + ': ' + dn(it), text: label });
-        if (disabled) bt.disabled = true;
-        bt.addEventListener('click', fn); return bt;
-      };
-      var step = function (delta) { it.duration = Math.max(C.MIN_DURATION, it.duration + delta); it.durEdited = true; refresh(); };
-      var sameSide = function (j) { return state.items[j] && state.items[j].side === it.side && state.items[j].type !== 'handoff'; };
-      var swap = function (j) { var t = state.items[idx]; state.items[idx] = state.items[j]; state.items[j] = t; refresh(); };
-      var dur = handoff
-        ? h('span', { class: 'it-until', text: 'until ' + (hm(state.a.recEnd) === null ? '?' : C.fmtTime(b.end)) })
-        : h('span', { class: 'it-dur' }, [act('−', 'Shorten by 5 minutes', function () { step(-5); }, it.duration <= C.MIN_DURATION),
-            h('span', { class: 'it-min', text: C.fmtDuration(it.duration) }), act('+', 'Lengthen by 5 minutes', function () { step(5); })]);
-      return h('li', { class: 'it' + (handoff ? ' it-handoff' : '') }, [
-        h('div', { class: 'it-head' }, [
-          h('span', { class: 'it-time', text: C.fmtTime(b.start) }), dur,
-          h('span', { class: 'it-acts' }, handoff ? [] : [
-            act('↑', 'Move earlier', function () { swap(idx - 1); }, !sameSide(idx - 1)),
-            act('↓', 'Move later', function () { swap(idx + 1); }, !sameSide(idx + 1)),
-            act('×', 'Remove', function () { state.items.splice(idx, 1); refresh(); })
-          ])
-        ]),
-        mk('it-name', 'name', 'Mary (primary photographer)'),
-        mk('it-second', 'second', 'Ben, at the same time (optional)'),
-        mk('it-note', 'note', 'Note for the couple (optional). Anything under 10 minutes goes here.')
-      ]);
+  // Rebuild rows from the answers but keep wording, notes and durations changed by hand, and any added rows.
+  function regenerate() {
+    var old = {}; state.items.forEach(function (it) { old[it.id] = it; });
+    var fresh = C.generateItems(state.a, state.m);
+    var custom = state.items.filter(function (it) { return /^x\d+$/.test(it.id); });
+    state.items = fresh.map(function (it) {
+      var o = old[it.id];
+      if (!o) return it;
+      return Object.assign({}, it, { note: o.note, duration: o.durEdited ? o.duration : it.duration, durEdited: !!o.durEdited, edited: !!o.edited,
+        name: o.edited ? o.name : it.name, second: o.edited ? o.second : it.second });
+    });
+    custom.forEach(function (it) {
+      var at = it.side === 'before' ? state.items.filter(function (x) { return x.side === 'before'; }).length : state.items.length - 1;
+      state.items.splice(at, 0, it);
+    });
+    refresh();
+  }
+
+  function seg(id, options, current, onPick) {
+    var box = $(id); box.textContent = '';
+    options.forEach(function (o) {
+      var b = h('button', { class: 'segbtn', type: 'button', 'aria-pressed': String(o[0]) === String(current) ? 'true' : 'false', text: o[1] });
+      b.addEventListener('click', function () { if (String(o[0]) !== String(current)) onPick(o[0]); });
+      box.appendChild(b);
+    });
+  }
+  function renderBasics() {
+    var a = state.a, m = state.m;
+    seg('seg-look', [['firstlook', 'First look'], ['contact', 'First contact'], ['neither', 'Neither']], a.look, function (v) {
+      remember(); a.look = v;
+      // A first look frees the couple to join cocktail hour; without one, photos usually take that time.
+      if (!m.cocktailEdited) m.cocktail = v === 'firstlook' ? 30 : 0;
+      regenerate();
+    });
+    seg('seg-loc', [['one', 'One location'], ['several', 'Several']], isMulti() ? 'several' : 'one', function (v) {
+      remember(); a.multi = v === 'several'; a.brideSame = !a.multi; a.recSame = !a.multi; regenerate();
+    });
+    seg('seg-len', [[30, '30 min'], [45, '45'], [60, '60']], +a.cerLen, function (v) { remember(); a.cerLen = v; $('q-cer-len').value = v; refresh(); });
+
+    var box = $('chips'); box.textContent = '';
+    var chip = function (label, on, set) {
+      var b = h('button', { class: 'chipbtn', type: 'button', 'aria-pressed': on ? 'true' : 'false', text: label });
+      b.addEventListener('click', function () { remember(); set(!on); regenerate(); });
+      box.appendChild(b);
     };
-    var cer = blocks.ceremony, placed = false;
-    state.items.forEach(function (it, idx) {
-      if (it.side === 'after' && !placed) {
-        ul.appendChild(h('li', { class: 'it it-cer' }, [h('span', { class: 'it-time', text: C.fmtTime(cer.start) }),
-          h('span', { text: 'Wedding Ceremony, ' + C.fmtDuration(cer.duration) + ' (set in the answers above)' })]));
-        placed = true;
+    chip('First look with dad', a.dad === 'yes', function (v) { a.dad = v ? 'yes' : 'no'; });
+    chip('Robe photos', a.robes === 'yes', function (v) { a.robes = v ? 'yes' : 'no'; });
+    chip('Cocktail hour', m.cocktail > 0, function (v) { m.cocktail = v ? 30 : 0; m.cocktailEdited = true; });
+    chip('Sunset portraits', m.sunsetPortraits === 'yes', function (v) { m.sunsetPortraits = v ? 'yes' : 'no'; });
+    chip('Exit', !!a.exit, function (v) { a.exit = v ? 'Sparklers' : ''; $('q-exit').value = a.exit; });
+    if (isMulti()) {
+      chip('Drive to ceremony', !a.brideSame, function (v) { a.brideSame = !v; });
+      chip('Drive to reception', !a.recSame, function (v) { a.recSame = !v; });
+    }
+    chip('Groom gets ready elsewhere', !a.groomSame, function (v) { a.groomSame = !v; });
+  }
+
+  function renderStrip() {
+    var cov = view.cov, cer = view.blocks.filter(function (b) { return b.id === 'ceremony'; })[0];
+    var booked = (+state.m.hours || 0) * 60, over = cov.minutes - booked;
+    var el = $('anchors'); el.textContent = '';
+    var add = function (k, v, cls) { el.appendChild(h('span', { class: 'anc' + (cls ? ' ' + cls : '') }, [h('span', { class: 'anc-k', text: k }), h('span', { class: 'anc-v', text: v })])); };
+    add('Photos begin', C.fmtTime(cov.start));
+    add('Ceremony', C.fmtTime(cer.start));
+    add('Sunset', view.sunset === null ? 'Set the date' : C.fmtTime(view.sunset));
+    add('Reception ends', C.fmtTime(cov.end));
+    add('Coverage', C.fmtDuration(cov.minutes) + ' of ' + C.fmtDuration(booked) + ' booked' + (over > 0 ? ', ' + C.fmtDuration(over) + ' over' : ''), over > 0 ? 'warn' : 'ok');
+    $('undo-btn').disabled = !undoStack.length;
+    $('view-btn').textContent = view.as === 'couple' ? 'Back to editing' : 'View as couple';
+    $('view-btn').setAttribute('aria-pressed', view.as === 'couple' ? 'true' : 'false');
+    document.body.dataset.viewas = view.as === 'couple' ? 'couple' : 'edit';
+  }
+
+  function clearDrop() { Array.prototype.forEach.call(document.querySelectorAll('.drop-before, .drop-after'), function (x) { x.classList.remove('drop-before', 'drop-after'); }); }
+  // Reordering by dragging the grip. Done with pointer events so text fields in the rows keep working normally.
+  function wireDrag(li, handle, it) {
+    li.dataset.item = it.id;
+    handle.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      var target = null, after = false;
+      li.classList.add('dragging'); document.body.style.cursor = 'grabbing';
+      var move = function (ev) {
+        clearDrop(); target = null;
+        Array.prototype.forEach.call(document.querySelectorAll('#rows .row[data-item]'), function (row) {
+          var other = itemById(row.dataset.item), r = row.getBoundingClientRect();
+          if (!other || other.id === it.id || other.side !== it.side || ev.clientY < r.top || ev.clientY > r.bottom) return;
+          target = other; after = ev.clientY > r.top + r.height / 2;
+          row.classList.add(after ? 'drop-after' : 'drop-before');
+        });
+      };
+      var up = function () {
+        document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up);
+        li.classList.remove('dragging'); document.body.style.cursor = ''; clearDrop();
+        if (!target) return;
+        remember();
+        state.items.splice(state.items.indexOf(it), 1);
+        state.items.splice(state.items.indexOf(target) + (after ? 1 : 0), 0, it);
+        refresh();
+      };
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+    });
+  }
+
+  // The timeline itself is the editor: same blocks and heights the couple sees, with the text editable in place.
+  function renderRowsEdit() {
+    var ol = $('rows'); ol.textContent = '';
+    var addBar = function (side) {
+      var sel = h('select', { class: 'addsel', 'aria-label': 'Add a row ' + (side === 'before' ? 'before' : 'after') + ' the ceremony' },
+        [h('option', { value: '', text: '+ Add a row ' + (side === 'before' ? 'before' : 'after') + ' the ceremony' })]
+          .concat(C.LIBRARY.map(function (l) { return h('option', { value: l.key, text: l.name || 'Blank row' }); })));
+      sel.addEventListener('change', function () {
+        var lib = C.LIBRARY.filter(function (l) { return l.key === sel.value; })[0]; if (!lib) return;
+        remember();
+        var it = { id: 'x' + (state.seq++), side: side, name: lib.name, second: lib.second, duration: lib.duration, type: lib.type || 'std', note: '' };
+        var at = side === 'before' ? state.items.filter(function (x) { return x.side === 'before'; }).length : state.items.length - 1;
+        state.items.splice(at, 0, it);
+        refresh();
+      });
+      ol.appendChild(h('li', { class: 'addbar' }, [h('span'), sel]));
+    };
+    view.blocks.forEach(function (b) {
+      var it = itemById(b.id), handoff = it && it.type === 'handoff';
+      if (b.id === 'ceremony') addBar('before');
+      if (handoff) addBar('after');
+      var ht = C.blockHeight(Math.max(b.duration, 0), SCALE);
+      var kids = [];
+      if (!it) {
+        kids.push(h('span', { class: 'nm', text: b.name }), h('span', { class: 'blk-sub', text: 'Time and length are set at the top' }));
+      } else {
+        var field = function (cls, key, ph) {
+          var inp = h('input', { class: cls + (it[key] ? ' has' : ''), type: 'text', placeholder: ph, 'aria-label': ph, value: it[key] || '' }), before = null;
+          inp.addEventListener('focus', function () { before = snap(); });
+          inp.addEventListener('input', function () {
+            if (before) { remember(before); before = null; }
+            it[key] = inp.value; if (key !== 'note') it.edited = true;
+            inp.classList.toggle('has', !!inp.value);
+            light();
+          });
+          return inp;
+        };
+        kids.push(field('e-name', 'name', 'What Mary is photographing'));
+        if (!handoff) kids.push(field('e-second', 'second', 'Ben, at the same time'));
+        kids.push(field('e-note', 'note', handoff ? 'Extra note for the couple' : 'Note for the couple (anything under 10 minutes goes here)'));
+        if (handoff) kids.push(h('span', { class: 'blk-note', text: blockNote(Object.assign({}, b, { note: '' })) }));
       }
-      ul.appendChild(row(it, idx));
+      var blk = h('div', { class: 'blk edit ' + (b.type === 'anchor' ? 'anchor' : b.type === 'buffer' ? 'buffer' : 'std'), 'data-id': b.id, style: 'min-height:' + ht.height + 'px' }, kids);
+      var li = h('li', { class: 'row' }, [
+        h('div', { class: 't' }, [h('span', { class: 't-time', text: C.fmtTime(b.start) }), h('span', { class: 't-dur', text: C.fmtDuration(b.duration) })]), blk
+      ]);
+      if (it && !handoff) {
+        var i = state.items.indexOf(it);
+        var act = function (label, title, fn, off) {
+          var bt = h('button', { class: 'ebtn', type: 'button', title: title, 'aria-label': title + ': ' + dn(it), text: label });
+          if (off) bt.disabled = true;
+          bt.addEventListener('click', function () { remember(); fn(); refresh(); });
+          return bt;
+        };
+        var same = function (j) { return state.items[j] && state.items[j].side === it.side && state.items[j].type !== 'handoff'; };
+        var swap = function (j) { state.items[i] = state.items[j]; state.items[j] = it; };
+        var handle = h('span', { class: 'ebtn grip', title: 'Drag to reorder', 'aria-hidden': 'true', text: '☰' });
+        blk.appendChild(h('span', { class: 'e-ctl' }, [
+          handle,
+          act('−', 'Shorten by 5 minutes', function () { it.duration = Math.max(C.MIN_DURATION, it.duration - 5); it.durEdited = true; }, it.duration <= C.MIN_DURATION),
+          act('+', 'Lengthen by 5 minutes', function () { it.duration += 5; it.durEdited = true; }),
+          act('↑', 'Move earlier', function () { swap(i - 1); }, !same(i - 1)),
+          act('↓', 'Move later', function () { swap(i + 1); }, !same(i + 1)),
+          act('×', 'Remove this row', function () { state.items.splice(i, 1); })
+        ]));
+        wireDrag(li, handle, it);
+      }
+      ol.appendChild(li);
     });
   }
 
@@ -371,7 +497,9 @@
       'Version ' + lastN() + ' is published and matches this draft.';
   }
 
-  function refresh() { derive(); if (HAS_BUILDER) { renderItems(); renderChecks(); } renderPage(); save(); }
+  function refresh() { derive(); if (HAS_BUILDER) { renderBasics(); renderStrip(); renderChecks(); } renderPage(); save(); }
+  // After typing in a row: update everything except the rows, so the cursor stays where it is.
+  function light() { derive(); renderStrip(); renderChecks(); renderHero(); renderStatus(); renderFacts(); renderLegend(); layoutOverlays(); save(); }
 
   /* ---------- Item sheet (couple's side) ---------- */
   function openItem(id) {
@@ -394,54 +522,32 @@
   /* ---------- Events ---------- */
   if (HAS_BUILDER) {
   Object.keys(FIELDS).forEach(function (id) {
-    var f = FIELDS[id], el = $(id);
-    var handler = function () {
-      state[f[0]][f[1]] = f[2] === 'check' ? el.checked : f[2] === 'num' ? (el.value === '' ? '' : +el.value) : el.value;
-      // A first look frees the couple to join cocktail hour; without one, photos usually take that time.
-      if (id === 'm-cocktail') state.m.cocktailEdited = true;
-      if (id === 'q-look' && !state.m.cocktailEdited) { state.m.cocktail = state.a.look === 'firstlook' ? 30 : 0; $('m-cocktail').value = state.m.cocktail; }
-      syncConditional();
-      // Answers that change which rows exist rebuild the day; the rest only retime or relabel it.
-      if (SHAPING.indexOf(id) >= 0) regenerate(); else refresh();
-    };
-    el.addEventListener(el.tagName === 'SELECT' || f[2] === 'check' ? 'change' : 'input', handler);
-  });
-  // Rebuild rows from the answers but keep edits made to rows that survive.
-  function regenerate() {
-    var old = {}; state.items.forEach(function (it) { old[it.id] = it; });
-    var fresh = C.generateItems(state.a, state.m);
-    var custom = state.items.filter(function (it) { return /^x\d+$/.test(it.id); });
-    state.items = fresh.map(function (it) {
-      var o = old[it.id];
-      if (!o) return it;
-      return Object.assign({}, it, { note: o.note, duration: o.durEdited ? o.duration : it.duration, durEdited: !!o.durEdited, edited: !!o.edited,
-        name: o.edited ? o.name : it.name, second: o.edited ? o.second : it.second });
+    var f = FIELDS[id], el = $(id), before = null;
+    el.addEventListener('focus', function () { before = snap(); });
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', function () {
+      if (before) { remember(before); before = null; }
+      state[f[0]][f[1]] = f[2] === 'num' ? (el.value === '' ? '' : +el.value) : el.value;
+      refresh();
     });
-    custom.forEach(function (it) { // custom rows go back at the end of their side, before the reception
-      var at = it.side === 'before' ? state.items.filter(function (x) { return x.side === 'before'; }).length : state.items.length - 1;
-      state.items.splice(at, 0, it);
-    });
-    refresh();
-  }
-  $('regen-btn').addEventListener('click', function () { state.items = C.generateItems(state.a, state.m); refresh(); });
-  if ($('reset-btn')) $('reset-btn').addEventListener('click', function () { state = defaults(); fillInputs(); refresh(); });
-  $('add-btn').addEventListener('click', function () {
-    var lib = C.LIBRARY.filter(function (l) { return l.key === $('add-kind').value; })[0], side = $('add-side').value;
-    var it = { id: 'x' + (state.seq++), side: side, name: lib.name, second: lib.second, duration: lib.duration, type: lib.type || 'std', note: '' };
-    var at = side === 'before' ? state.items.filter(function (x) { return x.side === 'before'; }).length : state.items.length - 1;
-    state.items.splice(at, 0, it);
-    refresh();
   });
+  $('undo-btn').addEventListener('click', undo);
+  document.addEventListener('keydown', function (e) {
+    var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '');
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); undo(); }
+  });
+  $('view-btn').addEventListener('click', function () { view.as = view.as === 'couple' ? 'edit' : 'couple'; refresh(); });
+  $('regen-btn').addEventListener('click', function () { remember(); state.items = C.generateItems(state.a, state.m); refresh(); });
+  if ($('reset-btn')) $('reset-btn').addEventListener('click', function () { remember(); var d = defaults(); state.a = d.a; state.m = d.m; state.items = d.items; fillInputs(); refresh(); });
   $('pub-btn').addEventListener('click', function () {
-    var snap = snapshot(), changes = view.changes;
+    var snapBlocks = snapshot(), changes = view.changes;
     var done = function (n) {
-      state.versions.push({ n: n, blocks: snap, changes: changes, at: new Date().toISOString() });
+      state.versions.push({ n: n, blocks: snapBlocks, changes: changes, at: new Date().toISOString() });
       state.showChanges = true; refresh();
     };
     if (MODE !== 'admin') { done(lastN() + 1); return; }
     $('pub-btn').disabled = true;
     fetch('/admin/api/weddings/' + REF + '/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ a: state.a, m: state.m, items: state.items, blocks: snap, changes: changes }) })
+      body: JSON.stringify({ a: state.a, m: state.m, items: state.items, blocks: snapBlocks, changes: changes }) })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { done(j.n); setSaveState('Version ' + j.n + ' published'); })
       .catch(function () { setSaveState('Could not publish. Nothing changed for the couple. Reload and try again.'); renderChecks(); });
@@ -450,14 +556,6 @@
     var ok = function () { $('copy-btn').textContent = 'Copied'; setTimeout(function () { $('copy-btn').textContent = 'Copy link'; }, 1500); };
     try { navigator.clipboard.writeText(shareUrl).then(ok, function () { $('pub-link').select(); }); } catch (e) { $('pub-link').select(); }
   });
-  ['view-builder', 'view-page'].forEach(function (id) {
-    $(id).addEventListener('click', function () {
-      document.body.dataset.view = id === 'view-page' ? 'page' : 'builder';
-      $('view-builder').setAttribute('aria-pressed', id === 'view-builder'); $('view-page').setAttribute('aria-pressed', id === 'view-page');
-      layoutOverlays();
-    });
-  });
-
   } // end builder events
 
   $('item-form').addEventListener('submit', function (e) {
@@ -494,8 +592,8 @@
   /* ---------- Start ---------- */
   function start() {
     document.body.dataset.feedback = FEEDBACK ? 'on' : 'off';
+    document.body.dataset.mode = MODE;
     if (HAS_BUILDER) {
-      C.LIBRARY.forEach(function (l) { $('add-kind').appendChild(h('option', { value: l.key, text: l.name || 'Custom item' })); });
       Object.keys(PLACES).forEach(function (k) { $('q-place').appendChild(h('option', { value: k, text: PLACES[k].label })); });
       fillInputs();
     }

@@ -11,88 +11,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Questrial&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body data-view="builder" data-mode="admin">
+<body data-mode="admin" data-viewas="edit">
 <div class="topbar"><a href="/admin">All weddings</a><span id="save-state" aria-live="polite"></span></div>
 <p class="loadmsg" id="load-msg" hidden>This wedding could not be loaded. Go back to all weddings and try again.</p>
-<div class="viewbar" role="group" aria-label="View">
-  <button type="button" id="view-builder" aria-pressed="true">Builder</button>
-  <button type="button" id="view-page" aria-pressed="false">Couple's page</button>
-</div>
 <div class="app">
-
-  <section class="builder" id="builder" aria-label="Timeline builder">
-    <header>
-      <h1>Timeline builder</h1>
-      <p>Key in the questionnaire, adjust the day, and the couple's page updates as you go. Drafts save automatically. Couples see only what you publish.</p>
-    </header>
-
-    <div class="panel">
-      <h2>From the questionnaire</h2>
-      <div class="grid">
-        <label class="f" for="q-couple"><span>Couple's names</span><input type="text" id="q-couple" placeholder=""></label>
+  <div class="bstrip">
+    <div class="anchors" id="anchors" aria-live="polite"></div>
+    <div class="bstrip-acts">
+      <button class="bbtn" type="button" id="undo-btn" title="Undo the last change (Ctrl+Z)">Undo</button>
+      <button class="bbtn" type="button" id="view-btn" aria-pressed="false">View as couple</button>
+      <button class="bbtn primary" type="button" id="pub-btn">Publish</button>
+    </div>
+  </div>
+  <section class="builder" id="builder" aria-label="Start">
+    <div class="panel basics">
+      <div class="brow">
+        <label class="f grow" for="q-couple"><span>Couple</span><input type="text" id="q-couple" placeholder="Emily & James"></label>
         <label class="f" for="q-date"><span>Wedding date</span><input type="date" id="q-date" min="2024-01-01" max="2032-12-31"></label>
-        <label class="f wide" for="q-planner"><span>Planner or coordinator, name and contact</span><input type="text" id="q-planner" placeholder=""></label>
-        <label class="f wide" for="q-cer-venue"><span>Ceremony name and address</span><input type="text" id="q-cer-venue" placeholder=""></label>
-        <label class="f wide" for="q-place"><span>Sunset is calculated for</span><select id="q-place"></select></label>
-        <label class="f ck" for="q-rec-same"><input type="checkbox" id="q-rec-same"><span>Reception is at the ceremony venue</span></label>
-        <label class="f" id="wrap-rec-venue" for="q-rec-venue"><span>Reception name and address</span><input type="text" id="q-rec-venue" placeholder=""></label>
-        <label class="f" id="wrap-drive-rec" for="q-drive-rec"><span>Drive to the reception, minutes</span><input type="number" id="q-drive-rec" step="5" min="0" inputmode="decimal"></label>
-        <label class="f ck" for="q-bride-same"><input type="checkbox" id="q-bride-same"><span>Bride gets ready at the ceremony venue</span></label>
-        <label class="f" id="wrap-bride-prep" for="q-bride-prep"><span>Bride's getting ready location</span><input type="text" id="q-bride-prep" placeholder=""></label>
-        <label class="f" id="wrap-drive-cer" for="q-drive-cer"><span>Drive to the ceremony, minutes</span><input type="number" id="q-drive-cer" step="5" min="0" inputmode="decimal"></label>
-        <label class="f ck" for="q-groom-same"><input type="checkbox" id="q-groom-same"><span>Groom gets ready in the same place as the bride</span></label>
-        <label class="f wide" id="wrap-groom-prep" for="q-groom-prep"><span>Groom's getting ready location</span><input type="text" id="q-groom-prep" placeholder=""></label>
-        <label class="f" for="q-robes"><span>Matching shirts or robes photos</span><select id="q-robes"><option value="no">No</option><option value="yes">Yes</option></select></label>
-        <label class="f" for="q-dad"><span>First look with dad</span><select id="q-dad"><option value="no">No</option><option value="yes">Yes</option></select></label>
-        <label class="f" for="q-look"><span>Bride and groom</span><select id="q-look"><option value="firstlook">First look</option><option value="contact">First contact</option><option value="neither">Neither</option></select></label>
-        <label class="f" for="q-cer-start"><span>Ceremony start time</span><input type="time" id="q-cer-start" step="300"></label>
-        <label class="f" for="q-cer-len"><span>Ceremony length, minutes</span><input type="number" id="q-cer-len" step="5" min="10" inputmode="decimal"></label>
-        <label class="f" for="q-rec-end"><span>Reception end time</span><input type="time" id="q-rec-end" step="300"></label>
-        <label class="f wide" for="q-exit"><span>Exit (blank if none)</span><input type="text" id="q-exit" placeholder="Sparklers"></label>
-        <label class="f wide" for="q-notes"><span>Is there anything else?</span><textarea id="q-notes"></textarea></label>
+        <label class="f" for="q-cer-start"><span>Ceremony starts</span><input type="time" id="q-cer-start" step="300"></label>
+        <label class="f" for="q-rec-end"><span>Reception ends</span><input type="time" id="q-rec-end" step="300"></label>
       </div>
-    </div>
-
-    <div class="panel">
-      <h2>Mary adds</h2>
-      <div class="grid">
-        <label class="f" for="m-hours"><span>Booked coverage, hours</span><input type="number" id="m-hours" step="0.5" min="1" inputmode="decimal"></label>
-        <label class="f" for="m-cocktail"><span>Couple joins cocktail hour, minutes (0 for none)</span><input type="number" id="m-cocktail" step="5" min="0" inputmode="decimal"></label>
-        <label class="f" for="m-sunset"><span>Offer sunset portraits</span><select id="m-sunset"><option value="yes">Yes</option><option value="no">No</option></select></label>
+      <div class="brow">
+        <div class="f"><span id="lab-look">Bride and groom</span><div class="seg2" id="seg-look" role="group" aria-labelledby="lab-look"></div></div>
+        <div class="f"><span id="lab-loc">Locations</span><div class="seg2" id="seg-loc" role="group" aria-labelledby="lab-loc"></div></div>
+        <div class="f"><span id="lab-len">Ceremony length</span><div class="seg2" id="seg-len" role="group" aria-labelledby="lab-len"></div></div>
+        <label class="f narrow" for="q-cer-len"><span>Other, minutes</span><input type="number" id="q-cer-len" step="5" min="10"></label>
+        <label class="f narrow" for="m-hours"><span>Booked hours</span><input type="number" id="m-hours" step="0.5" min="1"></label>
       </div>
-    </div>
-
-    <div class="panel">
-      <h2>The day</h2>
-      <p class="panel-help">Times follow from the ceremony. Rows are 10 minutes or longer, in 5 minute steps. Changing a yes or no answer above rebuilds the rows in their standard order and keeps the wording, notes and durations you changed yourself.</p>
-      <ol class="items" id="items"></ol>
-      <div class="addrow">
-        <select id="add-kind" aria-label="Row to add"></select>
-        <select id="add-side" aria-label="Where to add it"><option value="before">Before the ceremony</option><option value="after">After the ceremony</option></select>
-        <button class="bbtn" type="button" id="add-btn">Add row</button>
-      </div>
-      <div class="addrow">
-        <button class="bbtn" type="button" id="regen-btn">Rebuild rows from the answers</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Before you send (private)</h2>
-      <ul class="checks" id="checks"></ul>
-      <div class="pubrow">
-        <button class="bbtn primary" type="button" id="pub-btn">Publish</button>
-        <span id="pub-state" class="panel-help"></span>
-      </div>
-      <div class="pubrow" id="link-row" hidden>
-        <input type="text" id="pub-link" readonly aria-label="Private link for the couple">
-        <button class="bbtn" type="button" id="copy-btn">Copy link</button>
-      </div>
-      <p class="panel-help" id="link-help" hidden>This link always shows the latest published version. Email it to the couple yourself.</p>
+      <div class="chips" id="chips" role="group" aria-label="Add or remove parts of the day"></div>
     </div>
   </section>
-
-  <div class="pagecol">
-    <span class="label">What the couple sees</span>
+  <div class="pagecol" id="pagecol">
   <main class="sheet" id="sheet">
     <header class="brand">
       <span class="brand-name">Mary Anna</span>
@@ -144,6 +93,35 @@
     </footer>
   </main>
   </div>
+  <section class="builder" aria-label="Details and checks">
+    <details class="panel" id="more">
+      <summary>More details: venues, planner, notes</summary>
+      <div class="grid">
+        <label class="f wide" for="q-cer-venue"><span>Ceremony name and address</span><input type="text" id="q-cer-venue" placeholder=""></label>
+        <label class="f" for="q-place"><span>Sunset is calculated for</span><select id="q-place"></select></label>
+        <label class="f" for="q-exit"><span>Exit</span><input type="text" id="q-exit" placeholder="Sparklers"></label>
+        <label class="f wide" for="q-rec-venue"><span>Reception name and address</span><input type="text" id="q-rec-venue" placeholder=""></label>
+        <label class="f" for="q-bride-prep"><span>Bride's getting ready location</span><input type="text" id="q-bride-prep" placeholder=""></label>
+        <label class="f" for="q-groom-prep"><span>Groom's getting ready location</span><input type="text" id="q-groom-prep" placeholder=""></label>
+        <label class="f wide" for="q-planner"><span>Planner or coordinator, name and contact</span><input type="text" id="q-planner" placeholder=""></label>
+        <label class="f wide" for="q-notes"><span>Is there anything else?</span><textarea id="q-notes"></textarea></label>
+      </div>
+    </details>
+    <div class="panel">
+      <h2>Before you send (private)</h2>
+      <ul class="checks" id="checks"></ul>
+      <div class="pubrow">
+        <span id="pub-state" class="panel-help"></span>
+        <button class="bbtn" type="button" id="regen-btn" title="Puts the rows back to the standard set and order for the taps above">Reset rows to standard</button>
+        <button class="bbtn local-only" type="button" id="reset-btn">Start over with the sample day</button>
+      </div>
+      <div class="pubrow" id="link-row" hidden>
+        <input type="text" id="pub-link" readonly aria-label="Private link for the couple">
+        <button class="bbtn" type="button" id="copy-btn">Copy link</button>
+      </div>
+      <p class="panel-help" id="link-help" hidden>This link always shows the latest published version. Email it to the couple yourself.</p>
+    </div>
+  </section>
 </div>
 
 <dialog id="item-dlg" aria-labelledby="item-name">

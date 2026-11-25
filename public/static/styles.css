@@ -278,3 +278,62 @@ body[data-mode="viewer"] .pagecol { margin: 0 auto; width: 100%; max-width: 572p
 .wtable .w-couple { font-family: var(--body); font-size: 19px; }
 .wtable .w-meta { color: var(--ink-soft); }
 @media (max-width: 560px) { .wtable a { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+
+/* ---------- Low-input builder: one editable timeline ---------- */
+.app { display: flex; flex-direction: column; gap: 16px; max-width: 1040px; margin: 0 auto; padding: 0 16px 48px; }
+.app > .builder, .app > .pagecol { width: 100%; max-width: 760px; margin: 0 auto; }
+.app > .pagecol { max-width: 572px; }
+.bstrip { position: sticky; top: 0; z-index: 20; background: var(--slate); color: #fff; padding: 10px 16px; margin: 0 -16px; display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; font-family: var(--label); }
+.anchors { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.anc { display: flex; flex-direction: column; gap: 1px; }
+.anc-k { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; opacity: .78; }
+.anc-v { font-size: 14px; font-variant-numeric: tabular-nums; }
+.anc.warn .anc-v { color: #ffd7a1; }
+.bstrip-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.bstrip .bbtn { border-color: rgba(255,255,255,.7); color: #fff; }
+.bstrip .bbtn:hover:not(:disabled) { background: rgba(255,255,255,.14); }
+.bstrip .bbtn.primary { background: #fff; border-color: #fff; color: var(--slate); }
+.bstrip .bbtn.primary:hover:not(:disabled) { background: #f1eee6; }
+.bstrip .bbtn[aria-pressed="true"] { background: rgba(255,255,255,.22); }
+.brow { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: flex-end; }
+.brow .f { flex: 0 1 auto; }
+.brow .f.grow { flex: 1 1 200px; }
+.brow .f.narrow input { width: 92px; }
+.seg2 { display: inline-flex; }
+.segbtn { padding: 8px 12px; min-height: 36px; border: 1px solid var(--mist); background: var(--paper); font-family: var(--label); font-size: 14px; color: var(--ink); cursor: pointer; margin-left: -1px; }
+.segbtn:first-child { margin-left: 0; }
+.segbtn:hover { border-color: var(--slate); position: relative; }
+.segbtn[aria-pressed="true"] { background: var(--slate); border-color: var(--slate); color: #fff; position: relative; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chipbtn { padding: 7px 13px 6px; border: 1px solid var(--mist); border-radius: 999px; background: var(--paper); font-family: var(--label); font-size: 14px; color: var(--ink); cursor: pointer; }
+.chipbtn:hover { border-color: var(--slate); }
+.chipbtn[aria-pressed="true"] { background: var(--slate); border-color: var(--slate); color: #fff; }
+.chipbtn[aria-pressed="true"]::before { content: "\2713\00a0"; }
+#more > summary { cursor: pointer; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--slate); }
+.local-only { display: none; }
+body[data-mode="local"] .local-only { display: inline-block; }
+body[data-mode="local"] .topbar { display: none; }
+body[data-viewas="edit"] .act, body[data-viewas="edit"] .hint { display: none; }
+/* editing in place */
+.blk.edit { cursor: default; }
+.blk.edit input { width: 100%; border: 1px solid transparent; background: transparent; padding: 0 3px; margin: 0 -4px; font-family: var(--body); color: inherit; border-radius: 0; min-height: 0; }
+.blk.edit input:hover { border-color: var(--mist); }
+.blk.edit input:focus { border-color: var(--slate); background: var(--paper); color: var(--ink); outline: none; }
+.blk.edit .e-name { font-size: 17px; line-height: 20px; height: 22px; }
+.blk.edit .e-second, .blk.edit .e-note { font-size: 14px; line-height: 16px; height: 18px; font-style: italic; color: var(--ink-soft); }
+.blk.edit .e-second:not(.has), .blk.edit .e-note:not(.has) { display: none; }
+.blk.edit:focus-within .e-second, .blk.edit:focus-within .e-note { display: block; }
+.blk.buffer.edit .e-name { font-style: italic; }
+.e-ctl { position: absolute; top: 0; right: 0; transform: translateX(100%); padding: 4px 0 4px 8px; display: none; gap: 3px; z-index: 5; }
+.blk.edit:hover .e-ctl, .blk.edit:focus-within .e-ctl { display: inline-flex; }
+.ebtn { width: 28px; height: 28px; border: 1px solid var(--mist); background: var(--paper); color: var(--ink); cursor: pointer; font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; font-family: var(--label); }
+.ebtn:hover:not(:disabled) { border-color: var(--slate); }
+.ebtn:disabled { opacity: .35; cursor: default; }
+.ebtn.grip { cursor: grab; touch-action: none; user-select: none; }
+.row.dragging { opacity: .45; }
+.row.drop-before .blk { box-shadow: 0 -4px 0 var(--slate); }
+.row.drop-after .blk { box-shadow: 0 4px 0 var(--slate); }
+.addbar { display: grid; grid-template-columns: var(--tcol) minmax(0, 1fr); }
+.addsel { width: 100%; border: 1px dashed var(--taupe); background: transparent; padding: 6px 8px; font-family: var(--label); font-size: 12px; color: var(--ink-soft); cursor: pointer; }
+.addsel:hover { border-color: var(--slate); color: var(--ink); }
+@media (max-width: 1020px) { .e-ctl { transform: none; right: 4px; top: 4px; padding: 2px; background: var(--paper); box-shadow: 0 1px 6px rgba(66,73,83,.25); } }
