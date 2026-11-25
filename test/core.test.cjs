@@ -82,8 +82,8 @@ const gen = (a, m) => C.generateItems({ ...base, ...a }, { cocktail: 30, ...(m |
 const day = (items, cerStart, cerLen, recEnd) => C.buildTimeline({ ceremonyStart: cerStart, ceremonyDuration: cerLen,
   items: items.map((it, i) => ({ ...it, order: i, endAt: it.type === 'handoff' ? recEnd : null })) });
 const master = day(gen({}), hm(16, 30), 30, hm(21, 0));
-eq('default answers reproduce the master template durations', master.map((b) => b.duration), [45, 30, 15, 15, 30, 15, 15, 20, 20, 20, 30, 20, 10, 30, 180]);
-eq('master template starts at 12:45 PM', C.fmtTime(master[0].start), '12:45 PM');
+eq('default answers reproduce the master template durations', master.map((b) => b.duration), [45, 20, 15, 15, 30, 15, 15, 20, 20, 20, 30, 20, 10, 30, 180]);
+eq('master template starts at 12:55 PM with the 20 minute dress row', C.fmtTime(master[0].start), '12:55 PM');
 eq('reception runs to the couple\'s reception end', [C.fmtTime(master[14].start), C.fmtTime(master[14].end)], ['6:00 PM', '9:00 PM']);
 const late = day(gen({}), hm(18, 0), 30, hm(0, 30));
 eq('reception end after midnight', [late[14].duration, C.fmtTime(late[14].end)], [300, '12:30 AM']);

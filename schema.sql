@@ -1,6 +1,7 @@
 -- Wedding timeline app. Safe to run more than once.
 CREATE TABLE IF NOT EXISTS weddings (
   id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL DEFAULT 'mary-anna',  -- which photographer's account owns it
   token TEXT NOT NULL UNIQUE,          -- the secret part of the couple's link
   couple TEXT NOT NULL DEFAULT '',
   wedding_date TEXT NOT NULL DEFAULT '',

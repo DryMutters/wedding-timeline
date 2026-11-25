@@ -15,6 +15,7 @@
   "d1_databases": [{ "binding": "DB", "database_name": "wedding-timeline", "database_id": "e6c96aee-6d1d-459e-963f-471e58423eff" }],
   "vars": {
     // From Cloudflare Zero Trust. Until both are set, the builder refuses every request.
+    "ACCOUNT_ID": "mary-anna",
     "TEAM_DOMAIN": "",
     "POLICY_AUD": ""
   }

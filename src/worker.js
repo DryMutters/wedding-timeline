@@ -58,6 +58,8 @@ async function adminApi(request, env, url, user, parts) {
   // parts: ['admin', 'api', 'weddings', id?, 'publish'?]
   if (parts[2] !== 'weddings') return json({ error: 'Not found' }, 404);
   const method = request.method, id = parts[3], now = new Date().toISOString();
+  // Every record belongs to an account. Today there is one; sign-up for other photographers comes later.
+  const account = env.ACCOUNT_ID || 'default';
 
   // Changes must come from this site's own pages.
   if (method !== 'GET' && request.headers.get('origin') !== url.origin) return json({ error: 'Cross-site request refused' }, 403);
@@ -66,20 +68,20 @@ async function adminApi(request, env, url, user, parts) {
     if (method === 'GET') {
       const { results } = await env.DB.prepare(
         `SELECT w.id, w.couple, w.wedding_date, w.updated_at, (SELECT MAX(n) FROM versions v WHERE v.wedding_id = w.id) AS version
-         FROM weddings w ORDER BY CASE WHEN w.wedding_date = '' THEN 1 ELSE 0 END, w.wedding_date, w.created_at`).all();
+         FROM weddings w WHERE w.account_id = ? ORDER BY CASE WHEN w.wedding_date = '' THEN 1 ELSE 0 END, w.wedding_date, w.created_at`).bind(account).all();
       return json({ weddings: results });
     }
     if (method === 'POST') {
       const newId = crypto.randomUUID();
-      await env.DB.prepare('INSERT INTO weddings (id, token, couple, wedding_date, draft, created_at, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-        .bind(newId, newToken(), '', '', '{}', now, now, user.email).run();
+      await env.DB.prepare('INSERT INTO weddings (id, account_id, token, couple, wedding_date, draft, created_at, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(newId, account, newToken(), '', '', '{}', now, now, user.email).run();
       return json({ id: newId }, 201);
     }
     return json({ error: 'Method not allowed' }, 405);
   }
 
   if (!ID.test(id)) return json({ error: 'Not found' }, 404);
-  const wedding = await env.DB.prepare('SELECT id, token, draft FROM weddings WHERE id = ?').bind(id).first();
+  const wedding = await env.DB.prepare('SELECT id, token, draft FROM weddings WHERE id = ? AND account_id = ?').bind(id, account).first();
   if (!wedding) return json({ error: 'Not found' }, 404);
 
   if (!parts[4]) {

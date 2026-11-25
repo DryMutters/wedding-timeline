@@ -80,9 +80,10 @@ var TimelineCore = (function () {
     var driveToCeremony = function () { add('drive_cer', 'before', 'Drive to Ceremony', '', a.driveCer || 15, 'travel'); };
 
     add('details', 'before', 'Mary Photographs Bride\u2019s Details',
-      !a.groomSame ? 'Ben Photographs Groom Getting Ready' : (a.recSame ? 'Ben sets up reception lights' : ''), 45);
+      // Ben's first job is always the dress shot. Then he goes to the groom, wherever the groom is getting ready.
+      !a.groomSame ? 'Ben Photographs the Dress, then Drives to the Groom' : (a.recSame ? 'Ben Photographs the Dress, then Sets Up Reception Lights' : 'Ben Photographs the Dress, then Joins the Groom'), 45);
     if (a.robes === 'yes') add('robes', 'before', 'Getting Ready & Robe Photos', '', 20);
-    add('dress', 'before', 'Mary Photographs Bride Getting Into Dress', 'Ben Photographs Groom & Groomsmen Getting on Ties & Coats', first ? 30 : 20);
+    add('dress', 'before', 'Mary Photographs Bride Getting Into Dress', 'Ben Photographs Groom & Groomsmen Getting on Ties & Coats', 20); // 20 by default; a hard getting-ready location is Mary's call
     if (dad) add('dad', 'before', 'First Look with Dad', first ? '' : 'Groom with Groomsmen', 10);
     if (first) {
       if (a.brideSame) add('walk', 'before', 'Walk to First Look', '', 15); else driveToCeremony();

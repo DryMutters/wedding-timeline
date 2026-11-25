@@ -397,6 +397,9 @@
     var f = FIELDS[id], el = $(id);
     var handler = function () {
       state[f[0]][f[1]] = f[2] === 'check' ? el.checked : f[2] === 'num' ? (el.value === '' ? '' : +el.value) : el.value;
+      // A first look frees the couple to join cocktail hour; without one, photos usually take that time.
+      if (id === 'm-cocktail') state.m.cocktailEdited = true;
+      if (id === 'q-look' && !state.m.cocktailEdited) { state.m.cocktail = state.a.look === 'firstlook' ? 30 : 0; $('m-cocktail').value = state.m.cocktail; }
       syncConditional();
       // Answers that change which rows exist rebuild the day; the rest only retime or relabel it.
       if (SHAPING.indexOf(id) >= 0) regenerate(); else refresh();
