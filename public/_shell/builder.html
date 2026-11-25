@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Timeline builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Questrial&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body data-view="builder" data-mode="admin">
+<div class="topbar"><a href="/admin">All weddings</a><span id="save-state" aria-live="polite"></span></div>
+<p class="loadmsg" id="load-msg" hidden>This wedding could not be loaded. Go back to all weddings and try again.</p>
+<div class="viewbar" role="group" aria-label="View">
+  <button type="button" id="view-builder" aria-pressed="true">Builder</button>
+  <button type="button" id="view-page" aria-pressed="false">Couple's page</button>
+</div>
+<div class="app">
+
+  <section class="builder" id="builder" aria-label="Timeline builder">
+    <header>
+      <h1>Timeline builder</h1>
+      <p>Key in the questionnaire, adjust the day, and the couple's page updates as you go. Drafts save automatically. Couples see only what you publish.</p>
+    </header>
+
+    <div class="panel">
+      <h2>From the questionnaire</h2>
+      <div class="grid">
+        <label class="f" for="q-couple"><span>Couple's names</span><input type="text" id="q-couple" placeholder=""></label>
+        <label class="f" for="q-date"><span>Wedding date</span><input type="date" id="q-date" min="2024-01-01" max="2032-12-31"></label>
+        <label class="f wide" for="q-planner"><span>Planner or coordinator, name and contact</span><input type="text" id="q-planner" placeholder=""></label>
+        <label class="f wide" for="q-cer-venue"><span>Ceremony name and address</span><input type="text" id="q-cer-venue" placeholder=""></label>
+        <label class="f wide" for="q-place"><span>Sunset is calculated for</span><select id="q-place"></select></label>
+        <label class="f ck" for="q-rec-same"><input type="checkbox" id="q-rec-same"><span>Reception is at the ceremony venue</span></label>
+        <label class="f" id="wrap-rec-venue" for="q-rec-venue"><span>Reception name and address</span><input type="text" id="q-rec-venue" placeholder=""></label>
+        <label class="f" id="wrap-drive-rec" for="q-drive-rec"><span>Drive to the reception, minutes</span><input type="number" id="q-drive-rec" step="5" min="0" inputmode="decimal"></label>
+        <label class="f ck" for="q-bride-same"><input type="checkbox" id="q-bride-same"><span>Bride gets ready at the ceremony venue</span></label>
+        <label class="f" id="wrap-bride-prep" for="q-bride-prep"><span>Bride's getting ready location</span><input type="text" id="q-bride-prep" placeholder=""></label>
+        <label class="f" id="wrap-drive-cer" for="q-drive-cer"><span>Drive to the ceremony, minutes</span><input type="number" id="q-drive-cer" step="5" min="0" inputmode="decimal"></label>
+        <label class="f ck" for="q-groom-same"><input type="checkbox" id="q-groom-same"><span>Groom gets ready in the same place as the bride</span></label>
+        <label class="f wide" id="wrap-groom-prep" for="q-groom-prep"><span>Groom's getting ready location</span><input type="text" id="q-groom-prep" placeholder=""></label>
+        <label class="f" for="q-robes"><span>Matching shirts or robes photos</span><select id="q-robes"><option value="no">No</option><option value="yes">Yes</option></select></label>
+        <label class="f" for="q-dad"><span>First look with dad</span><select id="q-dad"><option value="no">No</option><option value="yes">Yes</option></select></label>
+        <label class="f" for="q-look"><span>Bride and groom</span><select id="q-look"><option value="firstlook">First look</option><option value="contact">First contact</option><option value="neither">Neither</option></select></label>
+        <label class="f" for="q-cer-start"><span>Ceremony start time</span><input type="time" id="q-cer-start" step="300"></label>
+        <label class="f" for="q-cer-len"><span>Ceremony length, minutes</span><input type="number" id="q-cer-len" step="5" min="10" inputmode="decimal"></label>
+        <label class="f" for="q-rec-end"><span>Reception end time</span><input type="time" id="q-rec-end" step="300"></label>
+        <label class="f wide" for="q-exit"><span>Exit (blank if none)</span><input type="text" id="q-exit" placeholder="Sparklers"></label>
+        <label class="f wide" for="q-notes"><span>Is there anything else?</span><textarea id="q-notes"></textarea></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Mary adds</h2>
+      <div class="grid">
+        <label class="f" for="m-hours"><span>Booked coverage, hours</span><input type="number" id="m-hours" step="0.5" min="1" inputmode="decimal"></label>
+        <label class="f" for="m-cocktail"><span>Couple joins cocktail hour, minutes (0 for none)</span><input type="number" id="m-cocktail" step="5" min="0" inputmode="decimal"></label>
+        <label class="f" for="m-sunset"><span>Offer sunset portraits</span><select id="m-sunset"><option value="yes">Yes</option><option value="no">No</option></select></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>The day</h2>
+      <p class="panel-help">Times follow from the ceremony. Rows are 10 minutes or longer, in 5 minute steps. Changing a yes or no answer above rebuilds the rows in their standard order and keeps the wording, notes and durations you changed yourself.</p>
+      <ol class="items" id="items"></ol>
+      <div class="addrow">
+        <select id="add-kind" aria-label="Row to add"></select>
+        <select id="add-side" aria-label="Where to add it"><option value="before">Before the ceremony</option><option value="after">After the ceremony</option></select>
+        <button class="bbtn" type="button" id="add-btn">Add row</button>
+      </div>
+      <div class="addrow">
+        <button class="bbtn" type="button" id="regen-btn">Rebuild rows from the answers</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Before you send (private)</h2>
+      <ul class="checks" id="checks"></ul>
+      <div class="pubrow">
+        <button class="bbtn primary" type="button" id="pub-btn">Publish</button>
+        <span id="pub-state" class="panel-help"></span>
+      </div>
+      <div class="pubrow" id="link-row" hidden>
+        <input type="text" id="pub-link" readonly aria-label="Private link for the couple">
+        <button class="bbtn" type="button" id="copy-btn">Copy link</button>
+      </div>
+      <p class="panel-help" id="link-help" hidden>This link always shows the latest published version. Email it to the couple yourself.</p>
+    </div>
+  </section>
+
+  <div class="pagecol">
+    <span class="label">What the couple sees</span>
+  <main class="sheet" id="sheet">
+    <header class="brand">
+      <span class="brand-name">Mary Anna</span>
+      <span class="brand-sub">Photography</span>
+    </header>
+
+    <section class="hero" aria-label="Wedding">
+      <span class="label">Wedding day timeline</span>
+      <h1 id="couple"></h1>
+      <p id="when"></p>
+    </section>
+
+    <section class="status" id="status" aria-live="polite"></section>
+
+    <dl class="facts" id="facts"></dl>
+
+    <section class="day" aria-labelledby="day-h">
+      <div class="day-head">
+        <span class="label" id="day-h">The day</span>
+        <ul class="legend" id="legend"></ul>
+        <p class="sun-note" id="sun-note" hidden></p>
+        <p class="hint">Taller blocks are longer. The second line is what Ben is photographing at the same time. Tap any part of the day for details.</p>
+      </div>
+      <div class="tl" id="tl">
+        <ol class="rows" id="rows"></ol>
+        <div class="ov ov-line dash" id="ov-gold" hidden></div>
+        <div class="ov ov-line" id="ov-line" hidden></div>
+        <div class="sun-lab" id="gold-lab" hidden></div>
+        <div class="sun-lab" id="sun-lab" hidden></div>
+      </div>
+    </section>
+
+    <section class="act" id="approve-sec" aria-labelledby="approve-h"></section>
+
+    <section class="act" aria-labelledby="req-h">
+      <h2 id="req-h">Change requests</h2>
+      <ul class="reqs" id="reqs"></ul>
+      <form id="general-form" class="fld">
+        <label class="label" for="general-text">Anything not tied to one part of the day</label>
+        <textarea id="general-text" placeholder="A question or a note for Mary Anna"></textarea>
+        <button class="btn ghost" type="submit">Send comment</button>
+      </form>
+    </section>
+
+    <footer class="foot">
+      <span class="brand-name" style="font-size:17px">Mary Anna</span>
+      <p>Tampa and Lakeland wedding photographer, serving couples across central Florida</p>
+      <p><a href="https://maryannaphotography.com">maryannaphotography.com</a> &middot; Instagram @maryannaphoto</p>
+    </footer>
+  </main>
+  </div>
+</div>
+
+<dialog id="item-dlg" aria-labelledby="item-name">
+  <form class="dlg" id="item-form">
+    <span class="dlg-when" id="item-when"></span>
+    <h3 id="item-name"></h3>
+    <p id="item-second"></p>
+    <p id="item-note"></p>
+    <p id="item-change" class="dlg-change"></p>
+    <div class="fld">
+      <label class="label" for="item-text">Request a change</label>
+      <textarea id="item-text" placeholder="What would you like to change about this part of the day?"></textarea>
+    </div>
+    <div class="dlg-btns">
+      <button class="btn" type="submit">Send request</button>
+      <button class="btn ghost" type="button" id="item-close">Close</button>
+    </div>
+    <p class="dlg-fine">Prototype: nothing is sent. In the real tool this emails Mary Anna and stays attached to this item.</p>
+  </form>
+</dialog>
+
+<dialog id="approve-dlg" aria-labelledby="approve-dlg-h">
+  <form class="dlg" id="approve-form">
+    <h3 id="approve-dlg-h">Approve this timeline</h3>
+    <p id="approve-dlg-p"></p>
+    <div class="fld">
+      <label class="label" for="approve-name">Your name</label>
+      <input class="field" id="approve-name" type="text" autocomplete="name" required>
+    </div>
+    <div class="dlg-btns">
+      <button class="btn" type="submit">Approve</button>
+      <button class="btn ghost" type="button" id="approve-close">Not yet</button>
+    </div>
+    <p class="dlg-fine">Prototype: nothing is sent. In the real tool this records your name and the time against this exact version.</p>
+  </form>
+</dialog>
+
+
+<script src="/static/core.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

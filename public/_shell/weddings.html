@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Weddings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Questrial&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body data-mode="list">
+<main class="wlist">
+  <h1>Wedding timelines</h1>
+  <div><button class="bbtn primary" type="button" id="new-btn">New wedding</button> <span id="list-state" class="panel-help" aria-live="polite"></span></div>
+  <ul class="wtable" id="wtable"></ul>
+</main>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function fmtDate(d) {
+    var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); if (!p) return 'No date yet';
+    return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(Date.UTC(+p[1], +p[2] - 1, +p[3])));
+  }
+  function row(w) {
+    var a = document.createElement('a'); a.href = '/admin/w/' + w.id;
+    var add = function (cls, text) { var s = document.createElement('span'); s.className = cls; s.textContent = text; a.appendChild(s); };
+    add('w-couple', w.couple || 'Untitled wedding'); add('w-meta', fmtDate(w.wedding_date));
+    add('w-meta', w.version ? 'Version ' + w.version + ' published' : 'Not published');
+    var li = document.createElement('li'); li.appendChild(a); return li;
+  }
+  fetch('/admin/api/weddings').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
+    var ul = $('wtable'); ul.textContent = '';
+    if (!j.weddings.length) $('list-state').textContent = 'No weddings yet.';
+    j.weddings.forEach(function (w) { ul.appendChild(row(w)); });
+  }).catch(function () { $('list-state').textContent = 'Could not load the list. Reload the page to sign in again.'; });
+  $('new-btn').addEventListener('click', function () {
+    $('new-btn').disabled = true;
+    fetch('/admin/api/weddings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { location.href = '/admin/w/' + j.id; })
+      .catch(function () { $('new-btn').disabled = false; $('list-state').textContent = 'Could not create a wedding. Try again.'; });
+  });
+})();
+</script>
+</body>
+</html>

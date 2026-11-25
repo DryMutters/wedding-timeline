@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Wedding Day Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Questrial&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body data-view="page" data-mode="viewer">
+<p class="loadmsg" id="load-msg" hidden>This timeline is not available. Please check the link in your email from Mary Anna Photography.</p>
+<div class="pagecol" id="pagecol" hidden>
+  <main class="sheet" id="sheet">
+    <header class="brand">
+      <span class="brand-name">Mary Anna</span>
+      <span class="brand-sub">Photography</span>
+    </header>
+
+    <section class="hero" aria-label="Wedding">
+      <span class="label">Wedding day timeline</span>
+      <h1 id="couple"></h1>
+      <p id="when"></p>
+    </section>
+
+    <section class="status" id="status" aria-live="polite"></section>
+
+    <dl class="facts" id="facts"></dl>
+
+    <section class="day" aria-labelledby="day-h">
+      <div class="day-head">
+        <span class="label" id="day-h">The day</span>
+        <ul class="legend" id="legend"></ul>
+        <p class="sun-note" id="sun-note" hidden></p>
+        <p class="hint">Taller blocks are longer. The second line is what Ben is photographing at the same time. Tap any part of the day for details.</p>
+      </div>
+      <div class="tl" id="tl">
+        <ol class="rows" id="rows"></ol>
+        <div class="ov ov-line dash" id="ov-gold" hidden></div>
+        <div class="ov ov-line" id="ov-line" hidden></div>
+        <div class="sun-lab" id="gold-lab" hidden></div>
+        <div class="sun-lab" id="sun-lab" hidden></div>
+      </div>
+    </section>
+
+    <section class="act" id="approve-sec" aria-labelledby="approve-h"></section>
+
+    <section class="act" aria-labelledby="req-h">
+      <h2 id="req-h">Change requests</h2>
+      <ul class="reqs" id="reqs"></ul>
+      <form id="general-form" class="fld">
+        <label class="label" for="general-text">Anything not tied to one part of the day</label>
+        <textarea id="general-text" placeholder="A question or a note for Mary Anna"></textarea>
+        <button class="btn ghost" type="submit">Send comment</button>
+      </form>
+    </section>
+
+    <footer class="foot">
+      <span class="brand-name" style="font-size:17px">Mary Anna</span>
+      <p>Tampa and Lakeland wedding photographer, serving couples across central Florida</p>
+      <p><a href="https://maryannaphotography.com">maryannaphotography.com</a> &middot; Instagram @maryannaphoto</p>
+    </footer>
+  </main>
+</div>
+<dialog id="item-dlg" aria-labelledby="item-name">
+  <form class="dlg" id="item-form">
+    <span class="dlg-when" id="item-when"></span>
+    <h3 id="item-name"></h3>
+    <p id="item-second"></p>
+    <p id="item-note"></p>
+    <p id="item-change" class="dlg-change"></p>
+    <div class="fld">
+      <label class="label" for="item-text">Request a change</label>
+      <textarea id="item-text" placeholder="What would you like to change about this part of the day?"></textarea>
+    </div>
+    <div class="dlg-btns">
+      <button class="btn" type="submit">Send request</button>
+      <button class="btn ghost" type="button" id="item-close">Close</button>
+    </div>
+    <p class="dlg-fine">Prototype: nothing is sent. In the real tool this emails Mary Anna and stays attached to this item.</p>
+  </form>
+</dialog>
+
+<dialog id="approve-dlg" aria-labelledby="approve-dlg-h">
+  <form class="dlg" id="approve-form">
+    <h3 id="approve-dlg-h">Approve this timeline</h3>
+    <p id="approve-dlg-p"></p>
+    <div class="fld">
+      <label class="label" for="approve-name">Your name</label>
+      <input class="field" id="approve-name" type="text" autocomplete="name" required>
+    </div>
+    <div class="dlg-btns">
+      <button class="btn" type="submit">Approve</button>
+      <button class="btn ghost" type="button" id="approve-close">Not yet</button>
+    </div>
+    <p class="dlg-fine">Prototype: nothing is sent. In the real tool this records your name and the time against this exact version.</p>
+  </form>
+</dialog>
+
+
+<script src="/static/core.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
