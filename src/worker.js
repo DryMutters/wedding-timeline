@@ -123,7 +123,7 @@ export default {
     const url = new URL(request.url);
     const parts = url.pathname.split('/').filter(Boolean);
     try {
-      if (parts.length === 0) return Response.redirect('https://maryannaphotography.com/', 302);
+      if (parts.length === 0) return Response.redirect(url.origin + '/admin', 302);
 
       if (parts[0] === 'admin') {
         const user = await signedIn(request, env, url);
